@@ -1,0 +1,566 @@
+<title>Usta — usta sifarişi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: floating rounded app frame → top bar with dark pill nav → page header → card row → content (category grid / dark split inbox); order form in a modal sheet */
+:root{
+  --bg:#ECECF4; --frame:#F7F7FB; --surface:#FFFFFF; --ink:#16172B; --muted:#6E7088; --line:#E6E6F0;
+  --accent:#5B4DF6; --accent-2:#7A6CFF; --accent-ink:#FFFFFF; --accent-soft:#EEECFF;
+  --panel:#1C1D2E; --panel-2:#27283B; --panel-ink:#F2F2FA; --panel-muted:#9D9FB8;
+  --ok:#168A55; --ok-soft:#E2F5EB; --warn:#B26200; --warn-soft:#FFF0DD; --err:#D63452; --err-soft:#FDE8EC;
+  --shadow:0 1px 2px rgba(22,23,43,.04),0 10px 30px rgba(22,23,43,.06);
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+  --f:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0C14; --frame:#11121C; --surface:#1A1B29; --ink:#EFEFF8; --muted:#9799B2; --line:#2A2B3D;
+  --accent:#7466FF; --accent-2:#9286FF; --accent-ink:#FFFFFF; --accent-soft:#25234A;
+  --panel:#1F2033; --panel-2:#2A2B42; --panel-ink:#F2F2FA; --panel-muted:#A2A4BF;
+  --ok:#5ED394; --ok-soft:#163223; --warn:#FFB25C; --warn-soft:#382812; --err:#FF7D93; --err-soft:#3A1720;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0C14; --frame:#11121C; --surface:#1A1B29; --ink:#EFEFF8; --muted:#9799B2; --line:#2A2B3D;
+  --accent:#7466FF; --accent-2:#9286FF; --accent-ink:#FFFFFF; --accent-soft:#25234A;
+  --panel:#1F2033; --panel-2:#2A2B42; --panel-ink:#F2F2FA; --panel-muted:#A2A4BF;
+  --ok:#5ED394; --ok-soft:#163223; --warn:#FFB25C; --warn-soft:#382812; --err:#FF7D93; --err-soft:#3A1720;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.3); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:14px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.frame{max-width:1200px;margin:0 auto;background:var(--frame);border-radius:32px;padding:22px clamp(16px,3vw,32px) 32px;box-shadow:var(--shadow)}
+.ico{width:20px;height:20px;flex:none}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#fff}
+.logo-mark svg{width:20px;height:20px}
+.logo b{display:block;font-weight:800;font-size:19px;letter-spacing:.02em;line-height:1.1}
+.logo small{display:block;color:var(--muted);font-size:11px;font-weight:500}
+.nav-wrap{order:3;width:100%;overflow-x:auto;scrollbar-width:none}
+@media (min-width:880px){.nav-wrap{order:0;width:auto}}
+.nav{display:inline-flex;gap:4px;background:var(--panel);border-radius:999px;padding:5px}
+.nav button{border:0;background:none;color:var(--panel-muted);padding:9px 18px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;transition:color .15s,background .15s}
+.nav button:hover{color:var(--panel-ink)}
+.nav button[aria-selected="true"]{background:var(--accent);color:#fff}
+.nav .n{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#fff;color:var(--accent);font-size:11px;font-weight:800;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.nav button:not([aria-selected="true"]) .n{background:var(--panel-2);color:var(--panel-ink)}
+.icons{display:flex;gap:8px}
+.ibtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink);position:relative}
+.ibtn svg{width:18px;height:18px}
+.ibtn .dot{position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--err);border:2px solid var(--surface)}
+
+/* page header */
+.head{display:flex;align-items:center;gap:16px;margin:30px 0 22px;flex-wrap:wrap}
+.head h1{margin:0;font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.head p{margin:4px 0 0;color:var(--muted)}
+.head .grow{flex:1;min-width:220px}
+.btn{border:0;border-radius:999px;padding:12px 22px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:14px;transition:filter .15s,transform .15s}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 20px -8px var(--accent)}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-dark{background:var(--panel);color:var(--panel-ink)}
+.btn-white{background:#fff;color:#16172B}
+.btn:disabled{opacity:.6;cursor:wait}
+
+/* card row */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:6px;min-width:0;position:relative;overflow:hidden}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:600}
+.chip-ic{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center}
+.chip-ic svg{width:18px;height:18px}
+.chip-ic.red{color:var(--err)} .chip-ic.vio{color:var(--accent)} .chip-ic.grn{color:var(--ok)} .chip-ic.amb{color:var(--warn)}
+.big{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-top:8px;font-variant-numeric:tabular-nums}
+.big small{font-size:16px;font-weight:600;color:var(--muted);margin-left:4px}
+.sub{color:var(--muted);font-size:12.5px}
+.sub b{color:var(--accent)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:92px;margin-top:auto;padding-top:12px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars i{display:block;width:100%;max-width:22px;border-radius:7px 7px 3px 3px;background:var(--accent-soft);min-height:6px}
+.bars i.on{background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+.bars span{font-size:10px;color:var(--muted)}
+.tiles{display:flex;gap:8px;margin-top:auto;padding-top:12px}
+.tile{flex:1;min-width:0;background:var(--frame);border-radius:14px 14px 0 0;padding:12px 10px 18px;display:flex;flex-direction:column;gap:14px;font-size:12px;color:var(--muted)}
+.tile b{color:var(--ink);font-size:16px;font-variant-numeric:tabular-nums}
+.tile.on{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:rgba(255,255,255,.8);padding-top:24px;margin-top:-12px}
+.tile.on b{color:#fff}
+.tile span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* promo card */
+.promo{background:linear-gradient(140deg,var(--accent) 0%,#4334D9 100%);color:#fff;border:0}
+.promo .sub{color:rgba(255,255,255,.75)}
+.promo .chip-ic{border-color:rgba(255,255,255,.3);color:#fff}
+.promo h3{margin:10px 0 0;font-size:24px;line-height:1.15;letter-spacing:-.02em;font-weight:800;max-width:14ch}
+.promo .btn{margin-top:auto;align-self:flex-start}
+.promo::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;border:28px solid rgba(255,255,255,.08)}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.steps li{display:flex;gap:12px;align-items:center}
+.steps b{width:30px;height:30px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;font-size:13px}
+.steps span{font-weight:600}
+.steps small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+
+/* filter row */
+.filters{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filters .lbl{font-weight:700;display:flex;align-items:center;gap:8px;margin-right:6px}
+.filters .lbl i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--panel);color:var(--panel-ink);display:grid;place-items:center;font-size:11px}
+.field{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:0 16px;height:46px;flex:1;min-width:200px}
+.field:focus-within{border-color:var(--accent)}
+.field input{border:0;background:none;outline:none;flex:1;min-width:0;font-size:14px}
+.field svg{width:18px;height:18px;color:var(--muted)}
+.seg{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;overflow-x:auto;max-width:100%}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted);white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--panel-ink)}
+
+/* category grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.cat{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:14px;min-height:150px;transition:transform .18s,box-shadow .18s,border-color .18s}
+.cat:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:transparent}
+.cat:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.cat-top{display:flex;justify-content:space-between;align-items:flex-start}
+.cat .ic{width:50px;height:50px;border-radius:16px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;transition:background .18s,color .18s}
+.cat .ic svg{width:26px;height:26px}
+.cat .go{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);transition:all .18s}
+.cat .go svg{width:16px;height:16px}
+.cat:hover .ic{background:var(--accent);color:#fff}
+.cat:hover .go{background:var(--panel);color:var(--panel-ink);border-color:var(--panel)}
+.cat b{font-size:16px;font-weight:700;display:block;margin-top:auto}
+.cat small{color:var(--muted);font-size:12.5px;line-height:1.35;display:block}
+.cat.other{border-style:dashed;background:transparent}
+.empty{color:var(--muted);padding:18px 4px}
+
+/* dark panel (inbox + mine) */
+.panel{background:var(--panel);color:var(--panel-ink);border-radius:30px;padding:20px;display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:18px}
+@media (max-width:860px){.panel{grid-template-columns:1fr}}
+.panel h2{margin:4px 6px 14px;font-size:17px;font-weight:700}
+.rows{display:grid;gap:8px;align-content:start;max-height:640px;overflow:auto;padding-right:2px}
+.row{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:44px 1fr auto;gap:2px 12px;align-items:center;background:var(--panel-2);border-radius:var(--r-md);padding:12px 14px;transition:background .15s}
+.row:hover{background:color-mix(in srgb,var(--panel-2) 80%,#fff 8%)}
+.row:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+.row[aria-current="true"]{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+.row .av{grid-row:span 2;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center;color:var(--panel-ink)}
+.row .av svg{width:22px;height:22px}
+.row b{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row small{color:var(--panel-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row[aria-current="true"] small{color:rgba(255,255,255,.8)}
+.row .st{grid-row:span 2}
+.badge{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;white-space:nowrap;background:rgba(255,255,255,.08);color:var(--panel-ink)}
+.row[aria-current="true"] .badge{background:#fff;color:#16172B}
+.badge.new::before,.badge.work::before,.badge.done::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.badge.new::before{background:var(--accent-2)} .badge.work::before{background:var(--warn)} .badge.done::before{background:var(--ok)}
+.row[aria-current="true"] .badge.new::before{background:var(--accent)}
+.detail{background:linear-gradient(150deg,#6A5CFF 0%,#5243E8 55%,#4636CF 100%);border-radius:24px;padding:22px;color:#fff;display:flex;flex-direction:column;gap:18px;min-width:0}
+.d-top{display:flex;gap:18px 32px;flex-wrap:wrap}
+.d-top > div{min-width:0}
+.d-lbl{font-size:12px;color:rgba(255,255,255,.7);font-weight:500;margin-bottom:6px;display:block}
+.d-id{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.d-id .badge{background:rgba(255,255,255,.16);color:#fff;font-size:12px}
+.d-cat{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.d-cat span{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.16);display:grid;place-items:center}
+.d-cat svg{width:20px;height:20px}
+.d-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.d-tile{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px 16px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.d-tile.wide{grid-column:1 / -1}
+.d-tile b{font-size:16px;font-weight:700;overflow-wrap:anywhere;line-height:1.35}
+.d-tile.wide b{font-size:15px;font-weight:600}
+.d-tile .d-lbl{margin:0;display:flex;align-items:center;gap:6px}
+.d-tile .d-lbl svg{width:14px;height:14px}
+.d-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.18);padding-top:16px;margin-top:auto}
+.d-foot .lbl{font-size:12px;color:rgba(255,255,255,.7);margin-right:4px}
+.sbtn{border:1px solid rgba(255,255,255,.3);background:none;color:#fff;border-radius:999px;padding:8px 14px;font-weight:600;font-size:13px;cursor:pointer}
+.sbtn[aria-pressed="true"]{background:#fff;color:#16172B;border-color:#fff}
+.d-foot .btn{margin-left:auto}
+.d-empty{display:grid;place-items:center;text-align:center;color:rgba(255,255,255,.8);min-height:260px}
+.note{background:var(--panel-2);border-radius:var(--r-md);padding:18px;color:var(--panel-muted)}
+.note-l{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r-lg);padding:28px;color:var(--muted);text-align:center}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(14,15,30,.5);backdrop-filter:blur(4px);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .15s}
+.sheet{background:var(--surface);border-radius:28px;width:100%;max-width:500px;max-height:100%;overflow:auto;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.3);animation:up .22s ease-out}
+@keyframes fade{from{opacity:0}} @keyframes up{from{transform:translateY(18px);opacity:.5}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:560px){.scrim{align-items:flex-end;padding:0}.sheet{border-radius:28px 28px 0 0;max-height:92%;padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}body{padding-block:10px}.frame{border-radius:24px}}
+.sheet-h{display:flex;gap:14px;align-items:center;margin-bottom:20px}
+.sheet-h .ic{width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;display:grid;place-items:center;flex:none}
+.sheet-h .ic svg{width:26px;height:26px}
+.sheet-h div{flex:1;min-width:0}
+.sheet-h small{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.sheet-h h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+form{display:grid;gap:16px}
+label{display:grid;gap:7px;font-weight:700;font-size:13px}
+.hint{font-weight:500;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.inp{width:100%;border:1px solid var(--line);background:var(--frame);border-radius:16px;padding:13px 16px;font-size:16px;font-weight:500;transition:border-color .15s,background .15s}
+.inp:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+textarea.inp{resize:vertical;min-height:100px}
+.phone{display:flex;align-items:center;border:1px solid var(--line);background:var(--frame);border-radius:16px;overflow:hidden}
+.phone:focus-within{border-color:var(--accent);background:var(--surface)}
+.phone span{padding:13px 10px 13px 16px;font-weight:700;border-right:1px solid var(--line);font-variant-numeric:tabular-nums}
+.phone input{border:0;background:none;outline:none;padding:13px 14px;flex:1;min-width:0;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+.invalid .inp,.invalid .phone{border-color:var(--err);background:var(--err-soft)}
+.err{color:var(--err);font-size:12.5px;font-weight:600}
+.fs{border:0;padding:0;margin:0}
+.fs legend{font-weight:700;font-size:13px;padding:0;margin-bottom:8px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:600}
+.chips button[aria-pressed="true"]{border-color:var(--panel);background:var(--panel);color:var(--panel-ink)}
+.send{width:100%;justify-content:center;padding:15px;font-size:15px}
+.fine{color:var(--muted);font-size:12px;margin:0;text-align:center}
+.done-box{text-align:center;display:grid;gap:12px;justify-items:center;padding:10px 0}
+.done-box .okc{width:72px;height:72px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center}
+.done-box .okc svg{width:34px;height:34px}
+.done-box h2{margin:0;font-size:24px;font-weight:800}
+.done-box p{margin:0;color:var(--muted);max-width:36ch}
+.done-box code{font-family:var(--f);font-weight:800;font-size:20px;background:var(--accent-soft);color:var(--accent);padding:8px 18px;border-radius:14px;letter-spacing:.04em}
+.x{border:1px solid var(--line);background:var(--surface);width:40px;height:40px;border-radius:50%;cursor:pointer;display:grid;place-items:center;flex:none}
+.x svg{width:18px;height:18px}
+</style>
+
+<div class="frame">
+  <header class="top">
+    <div class="logo"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></span><div><b>USTA</b><small>Hər işə usta</small></div></div>
+    <div class="nav-wrap"><nav class="nav" role="tablist" id="nav">
+      <button role="tab" aria-selected="true" data-view="order">Sifariş et</button>
+      <button role="tab" aria-selected="false" data-view="mine" id="tabMine">Sifarişlərim <span class="n" id="nMine">0</span></button>
+      <button role="tab" aria-selected="false" data-view="inbox" id="tabInbox" hidden>Daxil olanlar <span class="n" id="nInbox">0</span></button>
+    </nav></div>
+    <div class="icons">
+      <button class="ibtn" type="button" aria-label="Yeni sifarişlər" id="bell" title="Yeni sifarişlər"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="dot" id="bellDot" hidden></span></button>
+    </div>
+  </header>
+
+  <!-- ORDER -->
+  <section id="v-order">
+    <div class="head">
+      <div class="grow"><h1>Usta sifariş et</h1><p>Xidməti seçin və sifariş buraxın. 15 dəqiqə ərzində geri zəng edəcəyik.</p></div>
+      <button class="btn btn-primary" type="button" data-open="other"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Sifariş yarat</button>
+    </div>
+    <div class="cards">
+      <article class="card promo">
+        <div class="card-h">Təcili çağırış<span class="chip-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span></div>
+        <h3>Boru partladı və ya işıq getdi?</h3>
+        <p class="sub" style="margin:0">Sifarişi təcili kimi qeyd edib ən yaxın ustaya ötürəcəyik.</p>
+        <button class="btn btn-white" type="button" data-open="other" data-urgent="1" style="margin-top:14px">Təcili çağır</button>
+      </article>
+      <article class="card">
+        <div class="card-h">Necə işləyir<span class="chip-ic vio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div>
+        <ol class="steps">
+          <li><b>1</b><span>Xidməti seçin<small>13 istiqamət və «Digər»</small></span></li>
+          <li><b>2</b><span>Tapşırığı yazın<small>Bir neçə söz, ünvan və telefon</small></span></li>
+          <li><b>3</b><span>Zəngi gözləyin<small>Operator gəlmə vaxtını dəqiqləşdirəcək</small></span></li>
+        </ol>
+      </article>
+    </div>
+    <div class="filters">
+      <span class="lbl">Xidmətlər <i id="catCount">13</i></span>
+      <label class="field" style="display:flex;font-weight:500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="text" placeholder="Axtarış: kran axır, rozetka, təmizlik…" aria-label="Xidmət axtarışı" autocomplete="off"></label>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="noCat" hidden>Heç nə tapılmadı. «Digər» seçin və tapşırığı öz sözlərinizlə yazın.</p>
+  </section>
+
+  <!-- MINE -->
+  <section id="v-mine" hidden>
+    <div class="head"><div class="grow"><h1>Sifarişlərim</h1><p>Operator sifarişi işə götürəndə status yenilənir.</p></div>
+      <button class="btn btn-primary" type="button" data-open="other"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Yeni sifariş</button></div>
+    <div id="mineBox"></div>
+  </section>
+
+  <!-- INBOX -->
+  <section id="v-inbox" hidden>
+    <div class="head"><div class="grow"><h1>Daxil olan sifarişlər</h1><p>Bütün müştəri sifarişləri bir yerdə.</p></div></div>
+    <div class="cards" id="stats"></div>
+    <div class="filters">
+      <span class="lbl">Filtr</span>
+      <div class="seg" id="seg">
+        <button aria-pressed="true" data-f="all">Hamısı</button>
+        <button aria-pressed="false" data-f="new">Yeni</button>
+        <button aria-pressed="false" data-f="work">İcrada</button>
+        <button aria-pressed="false" data-f="done">Hazırdır</button>
+      </div>
+      <label class="field" style="display:flex;font-weight:500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="iq" type="text" placeholder="Sifariş nömrəsi, telefon və ya ünvan" aria-label="Sifariş axtarışı" autocomplete="off"></label>
+    </div>
+    <div id="inboxBox"><div class="note-l">Sifarişlər yüklənir…</div></div>
+  </section>
+</div>
+
+<div class="scrim" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const I = {
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M9.5 15a2.5 2.5 0 0 0 2.5 2.5"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  roller:'<rect x="3" y="3" width="15" height="6" rx="1.5"/><path d="M18 6h2v5h-8v3"/><rect x="10.5" y="14" width="3" height="7" rx="1"/>',
+  broom:'<path d="M14 3 9.5 12"/><path d="M7 11.5h7l2 9.5H4z"/><path d="M8 21l1-5M12 21v-5"/>',
+  washer:'<rect x="4" y="2.5" width="16" height="19" rx="2"/><circle cx="12" cy="13" r="4.5"/><path d="M8 6h.01M11 6h2"/>',
+  truck:'<path d="M2 6h11v10H2zM13 9h4l4 4v3h-8"/><circle cx="6" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/>',
+  laptop:'<rect x="4" y="4" width="16" height="11" rx="1.5"/><path d="M2 19h20"/>',
+  hammer:'<path d="m14 6 4 4M3 21l9-9"/><path d="m11 5 3-3 6 6-3 3z"/>',
+  car:'<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="13" r=".8"/><circle cx="16.5" cy="13" r=".8"/>',
+  book:'<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M4 20.5A1.5 1.5 0 0 0 5.5 22H20"/>',
+  scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+  snow:'<path d="M12 2v20M4.5 6.5l15 11M19.5 6.5l-15 11"/><path d="m9 4 3 2 3-2M9 20l3-2 3 2"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14 9l2 2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  arrow:'<path d="M7 17 17 7M8 7h9v9"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  phone:'<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  text:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+  inbox:'<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/>',
+  alert:'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>',
+  spin:'<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
+};
+const svg = (n, sw=1.9) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
+
+const CATS = [
+  {id:'plumb', name:'Santexnik', sub:'Kran, boru, unitaz, kombi', icon:'drop', kw:'kran boru axır sızma unitaz lavabo kombi qızdırıcı smesitel kanalizasiya tıxanma'},
+  {id:'elec', name:'Elektrik', sub:'Rozetka, naqil, çilçıraq', icon:'bolt', kw:'rozetka işıq naqil çilçıraq avtomat şit açar elektrik'},
+  {id:'reno', name:'Mənzil təmiri', sub:'Açar təhvil, rəngləmə, kafel', icon:'roller', kw:'təmir rəngləmə kafel divar kağızı suvaq laminat tavan'},
+  {id:'hour', name:'Bir saatlıq usta', sub:'Asmaq, yığmaq, düzəltmək', icon:'hammer', kw:'rəf karniz mebel yığılması qapı televizor asmaq'},
+  {id:'clean', name:'Təmizlik', sub:'Mənzil, ofis, təmirdən sonra', icon:'broom', kw:'təmizlik klininq pəncərə yuma kimyəvi təmizləmə'},
+  {id:'appl', name:'Texnika təmiri', sub:'Paltaryuyan, soyuducu, qabyuyan', icon:'washer', kw:'paltaryuyan soyuducu qabyuyan plita soba mikrodalğalı'},
+  {id:'ac', name:'Kondisionerlər', sub:'Quraşdırma, freon, təmizləmə', icon:'snow', kw:'kondisioner split freon doldurma isitmə'},
+  {id:'move', name:'Yükdaşıma', sub:'Köçmə, yükdaşıyan, zibil daşıma', icon:'truck', kw:'köç yükdaşıyan hambal qazel zibil çatdırılma'},
+  {id:'pc', name:'Kompüter yardımı', sub:'PC, noutbuk, Wi‑Fi, internet', icon:'laptop', kw:'kompüter noutbuk internet wifi router printer windows virus'},
+  {id:'auto', name:'Avto xidmətlər', sub:'Evakuator, şinomontaj, səyyar təmir', icon:'car', kw:'maşın avto evakuator təkər şin akkumulyator'},
+  {id:'lock', name:'Qıfıl açılması', sub:'Qapı, seyf, silindr dəyişmə', icon:'key', kw:'qıfıl qapı açar açmaq silindr'},
+  {id:'tutor', name:'Repetitorlar', sub:'Məktəb, dillər, imtahanlar', icon:'book', kw:'repetitor ingilis riyaziyyat imtahan rus dili abituriyent'},
+  {id:'beauty', name:'Gözəllik', sub:'Manikür, evə bərbər', icon:'scissors', kw:'manikür saç kəsimi bərbər makiyaj qaş'},
+  {id:'other', name:'Digər', sub:'Lazım olanı tapmadınız? Tapşırığı yazın', icon:'plus', kw:''}
+];
+const catById = (id) => CATS.find(c => c.id === id) || CATS[CATS.length-1];
+const WHEN = ['Təcili','Bu gün','Sabah','Bu həftə'];
+const STATUS = {new:'Yeni', work:'İcrada', done:'Hazırdır'};
+
+const $ = (s) => document.getElementById(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (iso) => { try { return new Date(iso).toLocaleString('az-Latn-AZ',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); } catch { return ''; } };
+const ago = (iso) => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); if (m < 1) return 'indicə'; if (m < 60) return `${m} dəq əvvəl`; const h = Math.round(m/60); if (h < 24) return `${h} saat əvvəl`; return fmtDate(iso); };
+const fmtPhone = (d) => { d = d.replace(/\D/g,'').slice(0,9); return [d.slice(0,2),d.slice(2,5),d.slice(5,7),d.slice(7,9)].filter(Boolean).join(' '); };
+
+/* ---------- state & capabilities ---------- */
+let db = null, user = null, myId = null, mine = [], allDocs = [], inboxFilter = 'all', inboxQ = '', selInbox = null, selMine = null, isEditor = false;
+const caps = (async () => {
+  try {
+    [db, user] = await Promise.all([window.claude?.use?.('db') ?? null, window.claude?.use?.('user') ?? null]);
+    if (user) myId = await user.id();
+  } catch { db = null; }
+  if (db && myId) subscribeMine(); else renderMine();
+  if (db && user?.canEdit?.()) { isEditor = true; $('tabInbox').hidden = false; subscribeInbox(); }
+})();
+
+/* ---------- navigation ---------- */
+function go(view) {
+  [...$('nav').children].forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
+  ['order','mine','inbox'].forEach(v => $('v-'+v).hidden = v !== view);
+  window.scrollTo({top:0});
+}
+$('nav').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view); });
+$('bell').addEventListener('click', () => go(isEditor ? 'inbox' : 'mine'));
+
+/* ---------- categories ---------- */
+function renderGrid(q='') {
+  q = q.trim().toLowerCase();
+  const list = CATS.filter(c => !q || c.id==='other' || (c.name+' '+c.sub+' '+c.kw).toLowerCase().includes(q));
+  $('grid').innerHTML = list.map(c => `<button class="cat${c.id==='other'?' other':''}" data-id="${c.id}">
+      <span class="cat-top"><span class="ic">${svg(c.icon)}</span><span class="go">${svg('arrow',2)}</span></span>
+      <span><b>${c.name}</b><small>${c.sub}</small></span></button>`).join('');
+  $('catCount').textContent = list.length - (list.some(c=>c.id==='other') ? 1 : 0);
+  $('noCat').hidden = !(q && list.length === 1);
+}
+$('grid').addEventListener('click', e => { const b = e.target.closest('.cat'); if (b) openForm(b.dataset.id); });
+$('q').addEventListener('input', e => renderGrid(e.target.value));
+document.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) openForm(b.dataset.open, !!b.dataset.urgent); });
+renderGrid();
+
+/* ---------- modal form ---------- */
+let lastFocus = null, draft = {};
+function openForm(catId, urgent=false) {
+  const c = catById(catId);
+  draft = {cat: c.id, when: urgent ? 'Təcili' : 'Bu gün'};
+  lastFocus = document.activeElement;
+  $('sheet').innerHTML = `
+    <div class="sheet-h"><span class="ic">${svg(c.icon)}</span><div><small>Yeni sifariş</small><h2 id="mTitle">${c.id==='other'?'Tapşırığı yazın':c.name}</h2></div>
+      <button class="x" type="button" data-close aria-label="Bağla">${svg('x',2)}</button></div>
+    <form id="f" novalidate>
+      <label id="l-text">Nə baş verib?
+        <textarea class="inp" id="f-text" maxlength="300" placeholder="${c.id==='plumb'?'Məsələn: mətbəxdə kran damcılayır, dəyişmək lazımdır':'Tapşırığı qısaca yazın'}"></textarea>
+        <span class="hint"><span class="err" id="e-text"></span><span id="cnt">0 / 300</span></span>
+      </label>
+      <label id="l-addr">Ünvan
+        <input class="inp" id="f-addr" type="text" maxlength="160" autocomplete="street-address" placeholder="Şəhər, küçə, bina, mənzil">
+        <span class="err" id="e-addr"></span>
+      </label>
+      <label id="l-phone">Mobil nömrə
+        <span class="phone"><span>+994</span><input id="f-phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="50 123 45 67"></span>
+        <span class="err" id="e-phone"></span>
+      </label>
+      <fieldset class="fs"><legend>Usta nə vaxt lazımdır</legend>
+        <div class="chips" id="chips">${WHEN.map(w=>`<button type="button" aria-pressed="${w===draft.when}">${w}</button>`).join('')}</div>
+      </fieldset>
+      <span class="err" id="e-send"></span>
+      <button class="btn btn-primary send" id="send" type="submit">Sifarişi göndər</button>
+      <p class="fine">Nömrənizi yalnız operator görəcək. Zəng pulsuzdur.</p>
+    </form>`;
+  $('modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  const t = $('f-text'), p = $('f-phone');
+  t.addEventListener('input', () => $('cnt').textContent = `${t.value.length} / 300`);
+  p.addEventListener('input', () => { p.value = fmtPhone(p.value); });
+  $('chips').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; draft.when = b.textContent; [...$('chips').children].forEach(x => x.setAttribute('aria-pressed', x===b)); });
+  $('f').addEventListener('submit', submit);
+  setTimeout(() => t.focus(), 50);
+}
+function closeForm() { $('modal').hidden = true; document.body.style.overflow = ''; lastFocus?.focus?.(); }
+$('modal').addEventListener('click', e => { if (e.target === $('modal') || e.target.closest('[data-close]')) closeForm(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').hidden) closeForm(); });
+
+function validate() {
+  const text = $('f-text').value.trim(), addr = $('f-addr').value.trim(), digits = $('f-phone').value.replace(/\D/g,'');
+  const errs = {
+    text: text.length < 5 ? 'Tapşırığı heç olmasa bir neçə sözlə yazın' : '',
+    addr: addr.length < 5 ? 'Ustanın gələcəyi ünvanı yazın' : '',
+    phone: digits.length !== 9 ? '+994-dən sonra 9 rəqəm lazımdır, məsələn 50 123 45 67' : ''
+  };
+  for (const k in errs) { $('e-'+k).textContent = errs[k]; $('l-'+k).classList.toggle('invalid', !!errs[k]); }
+  const first = Object.keys(errs).find(k => errs[k]);
+  if (first) { (first==='phone'?$('f-phone'):$('f-'+first)).focus(); return null; }
+  return {text, addr, phone: '+994 ' + fmtPhone(digits)};
+}
+async function submit(e) {
+  e.preventDefault();
+  const v = validate(); if (!v) return;
+  const btn = $('send'); btn.disabled = true; btn.textContent = 'Göndərilir…'; $('e-send').textContent = '';
+  await caps;
+  const id = 'U' + Date.now().toString(36).toUpperCase().slice(-6);
+  const item = {id, cat: draft.cat, text: v.text, addr: v.addr, phone: v.phone, when: draft.when, status: 'new', createdAt: new Date().toISOString()};
+  try {
+    if (!db || !myId) throw {code: 'no_db'};
+    const ref = db.doc('requests/' + myId);
+    const snap = await ref.get();
+    const items = {...(snap.exists ? (snap.data()?.items || {}) : {}), [id]: item};
+    await ref.set({items, updatedAt: item.createdAt});
+    selMine = id;
+    showDone(item);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Sifarişi göndər';
+    $('e-send').textContent = err?.code === 'no_db'
+      ? 'Göndərmək alınmadı: səhifəni sifarişlərə girişi olan hesabla açın.'
+      : err?.code === 'invalid_argument' ? 'Göndərmək üçün icazəniz yoxdur. Səhifə sahibindən sizə «İştirakçı» girişi verməsini xahiş edin.'
+      : 'Göndərmək alınmadı. İnterneti yoxlayın və yenidən cəhd edin.';
+  }
+}
+function showDone(item) {
+  $('sheet').innerHTML = `<div class="done-box">
+    <span class="okc">${svg('check',2.4)}</span>
+    <h2 id="mTitle">Sifariş göndərildi</h2>
+    <code>№ ${esc(item.id)}</code>
+    <p>Təfərrüatları və gəlmə vaxtını dəqiqləşdirmək üçün 15 dəqiqə ərzində ${esc(item.phone)} nömrəsinə zəng edəcəyik.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-dark" type="button" id="toMine">Sifarişlərim</button>
+      <button class="btn" style="background:var(--frame)" type="button" data-close>Hazırdır</button></div></div>`;
+  $('toMine').addEventListener('click', () => { closeForm(); go('mine'); });
+  $('toMine').focus();
+}
+
+/* ---------- shared list/detail panel ---------- */
+function rowsHtml(list, sel, admin) {
+  return list.map(it => { const c = catById(it.cat); return `<button class="row" data-sel="${esc(it.id)}" aria-current="${it.id===sel}">
+    <span class="av">${svg(c.icon)}</span><b>№ ${esc(it.id)} · ${c.name}</b>
+    <span class="st"><span class="badge ${esc(it.status)}">${STATUS[it.status]||'Yeni'}</span></span>
+    <small>${admin ? esc(it.phone) + ' · ' : ''}${ago(it.createdAt)}</small></button>`; }).join('');
+}
+function detailHtml(it, admin) {
+  if (!it) return `<div class="detail d-empty"><div>${svg('inbox')}<p>Soldan sifariş seçin</p></div></div>`;
+  const c = catById(it.cat);
+  return `<div class="detail">
+    <div class="d-top">
+      <div><span class="d-lbl">Sifariş</span><div class="d-id">№ ${esc(it.id)} <span class="badge">${STATUS[it.status]||'Yeni'}</span></div></div>
+      <div><span class="d-lbl">Xidmət</span><div class="d-cat"><span>${svg(c.icon)}</span>${c.name}</div></div>
+      <div><span class="d-lbl">Yaradılıb</span><div class="d-cat" style="font-size:15px">${fmtDate(it.createdAt)}</div></div>
+    </div>
+    <div class="d-grid">
+      <div class="d-tile wide"><span class="d-lbl">${svg('text')}Təsvir</span><b>${esc(it.text)}</b></div>
+      <div class="d-tile"><span class="d-lbl">${svg('pin')}Ünvan</span><b>${esc(it.addr)}</b></div>
+      <div class="d-tile"><span class="d-lbl">${svg('phone')}Telefon</span><b id="ph-${esc(it.id)}">${esc(it.phone)}</b></div>
+      <div class="d-tile"><span class="d-lbl">${svg('clock')}Nə vaxt</span><b>${esc(it.when)}</b></div>
+    </div>
+    <div class="d-foot">${admin
+      ? `<span class="lbl">Status</span>${Object.keys(STATUS).map(s=>`<button class="sbtn" data-owner="${esc(it._owner)}" data-id="${esc(it.id)}" data-s="${s}" aria-pressed="${it.status===s}">${STATUS[s]}</button>`).join('')}
+         <button class="btn btn-white" type="button" data-copy="${esc(it.phone)}" data-target="ph-${esc(it.id)}">${svg('copy',2)}Nömrəni kopyala</button>`
+      : `<span class="lbl">${it.status==='done'?'Sifariş icra olundu. Usta-nı seçdiyiniz üçün təşəkkür edirik.':it.status==='work'?'Operator sifarişi ustaya ötürdü.':'Operatorun zəngini gözləyin.'}</span>`}
+    </div></div>`;
+}
+
+/* ---------- my requests ---------- */
+function subscribeMine() {
+  db.doc('requests/' + myId).onSnapshot(s => {
+    mine = Object.values(s.exists ? (s.data()?.items || {}) : {}).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    renderMine();
+  }, () => renderMine());
+}
+function renderMine() {
+  $('nMine').textContent = mine.length;
+  if (!mine.length) { $('mineBox').innerHTML = `<div class="note-l">${db ? 'Hələ sifarişiniz yoxdur. «Sifariş et» bölməsində xidmət seçin.' : 'Sifarişlərinizi görmək üçün hesaba daxil olun.'}</div>`; return; }
+  if (!mine.some(i => i.id === selMine)) selMine = mine[0].id;
+  $('mineBox').innerHTML = `<div class="panel"><div><h2>Sifarişlərim</h2><div class="rows" id="mineRows">${rowsHtml(mine, selMine, false)}</div></div>${detailHtml(mine.find(i=>i.id===selMine), false)}</div>`;
+}
+$('mineBox').addEventListener('click', e => { const r = e.target.closest('[data-sel]'); if (r) { selMine = r.dataset.sel; renderMine(); } });
+
+/* ---------- inbox (editors) ---------- */
+function subscribeInbox() {
+  const t = setTimeout(() => { if (!allDocs.length) $('inboxBox').innerHTML = '<div class="note-l">Sifarişlər yüklənmədi. Səhifəni yeniləyin.</div>'; }, 10000);
+  db.collection('requests').onSnapshot(qs => {
+    clearTimeout(t);
+    allDocs = qs.docs.map(d => ({owner: d.id, items: d.data()?.items || {}}));
+    renderInbox();
+  }, () => { clearTimeout(t); $('inboxBox').innerHTML = '<div class="note-l">Daxil olan sifarişlərə girişiniz yoxdur.</div>'; });
+}
+function allItems() { return allDocs.flatMap(d => Object.values(d.items).map(it => ({...it, _owner: d.owner}))).sort((a,b) => b.createdAt.localeCompare(a.createdAt)); }
+function renderStats(all) {
+  const cnt = s => all.filter(i => i.status === s).length;
+  const days = [...Array(7)].map((_, k) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - (6 - k)); return d; });
+  const per = days.map(d => all.filter(i => { const t = new Date(i.createdAt); return t >= d && t < new Date(d.getTime() + 864e5); }).length);
+  const max = Math.max(1, ...per), week = per.reduce((a,b)=>a+b,0);
+  const byCat = {}; all.forEach(i => byCat[i.cat] = (byCat[i.cat]||0) + 1);
+  const top = Object.entries(byCat).sort((a,b) => b[1]-a[1]).slice(0,3);
+  $('stats').innerHTML = `
+    <article class="card"><div class="card-h">Yeni<span class="chip-ic red">${svg('alert')}</span></div>
+      <div class="big">${cnt('new')}</div><div class="sub">operator zəngini gözləyir</div></article>
+    <article class="card"><div class="card-h">7 gündə<span class="chip-ic vio">${svg('inbox')}</span></div>
+      <div class="big">${week}<small>sifariş</small></div>
+      <div class="bars">${per.map((n,k)=>`<div><i class="${k===6?'on':''}" style="height:${Math.round(n/max*100)}%" title="${n}"></i><span>${days[k].toLocaleDateString('az-Latn-AZ',{weekday:'short'})}</span></div>`).join('')}</div></article>
+    <article class="card"><div class="card-h">İcrada<span class="chip-ic amb">${svg('spin')}</span></div>
+      <div class="big">${cnt('work')}</div><div class="sub">cəmi icra olunub: <b>${cnt('done')}</b></div></article>
+    <article class="card"><div class="card-h">Populyar xidmətlər<span class="chip-ic grn">${svg('arrow',2)}</span></div>
+      ${top.length ? `<div class="tiles">${top.map(([id,n],k)=>`<div class="tile${k===0?' on':''}"><b>${n}</b><span>${catById(id).name}</span></div>`).join('')}</div>` : '<div class="sub" style="margin-top:auto">İlk sifarişlərdən sonra görünəcək</div>'}</article>`;
+}
+function renderInbox() {
+  const all = allItems();
+  const nNew = all.filter(i => i.status === 'new').length;
+  $('nInbox').textContent = nNew; $('bellDot').hidden = !nNew;
+  renderStats(all);
+  const q = inboxQ.trim().toLowerCase();
+  const list = all.filter(i => (inboxFilter === 'all' || i.status === inboxFilter) && (!q || (i.id+' '+i.phone+' '+i.addr+' '+i.text).toLowerCase().includes(q)));
+  if (!all.length) { $('inboxBox').innerHTML = '<div class="note-l">Hələ sifariş yoxdur. Müştəri formanı göndərən kimi burada görünəcək.</div>'; return; }
+  if (!list.some(i => i.id === selInbox)) selInbox = list[0]?.id ?? null;
+  $('inboxBox').innerHTML = `<div class="panel"><div><h2>Sifarişlər · ${list.length}</h2><div class="rows">${list.length ? rowsHtml(list, selInbox, true) : '<div class="note">Bu filtrə uyğun sifariş yoxdur.</div>'}</div></div>${detailHtml(list.find(i=>i.id===selInbox), true)}</div>`;
+}
+$('seg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; inboxFilter = b.dataset.f; [...$('seg').children].forEach(x => x.setAttribute('aria-pressed', x===b)); renderInbox(); });
+$('iq').addEventListener('input', e => { inboxQ = e.target.value; renderInbox(); });
+$('inboxBox').addEventListener('click', async e => {
+  const r = e.target.closest('[data-sel]'); if (r) { selInbox = r.dataset.sel; renderInbox(); return; }
+  const cp = e.target.closest('[data-copy]');
+  if (cp) { try { await navigator.clipboard.writeText(cp.dataset.copy); cp.lastChild.textContent = 'Kopyalandı'; } catch { const el = $(cp.dataset.target); const rg = document.createRange(); rg.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(rg); } return; }
+  const b = e.target.closest('[data-s]'); if (!b || b.getAttribute('aria-pressed')==='true') return;
+  const doc = allDocs.find(d => d.owner === b.dataset.owner); if (!doc) return;
+  const items = {...doc.items, [b.dataset.id]: {...doc.items[b.dataset.id], status: b.dataset.s}};
+  b.disabled = true;
+  try { await db.doc('requests/' + b.dataset.owner).update({items}); } catch { b.disabled = false; }
+});
+</script>
